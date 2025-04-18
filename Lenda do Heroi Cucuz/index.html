@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A Lenda de Sir Cuzcuz</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    canvas { display: block; margin: 0 auto; background: #87CEEB; }
+    body { background: #000; overflow: hidden; font-family: monospace; color: white; }
+    #menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      text-align: center;
+      z-index: 10;
+    }
+    #menu h1 {
+      font-size: 48px;
+      color: yellow;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 0px red;
+    }
+    #menu p {
+      font-size: 24px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>A Lenda de Sir Cuzcuz</h1>
+    <p>Pressione ENTER para jogar</p>
+  </div>
+  <canvas id="gameCanvas" width="960" height="540"></canvas>
+  <audio id="bgMusic" src="https://vgmsite.com/soundtracks/zelda-nes/ckgfyodq/01%20Title%20Screen.mp3" loop></audio>
+  <audio id="sfxAttack" src="https://freesound.org/data/previews/240/240777_4107745-lq.mp3"></audio>
+  <script>
+    const menu = document.getElementById('menu');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const bgMusic = document.getElementById('bgMusic');
+    const sfxAttack = document.getElementById('sfxAttack');
+
+    let gameStarted = false;
+
+    // Herói
+    const hero = {
+      x: 100,
+      y: 400,
+      w: 40,
+      h: 60,
+      color: 'blue',
+      speed: 5,
+      attacking: false,
+      lives: 3,
+      health: 100
+    };
+
+    // Inimigos
+    const enemies = [
+      { x: 600, y: 400, w: 40, h: 60, color: 'red', alive: true, health: 50 },
+      { x: 800, y: 400, w: 60, h: 80, color: 'darkred', alive: true, health: 150, boss: true }
+    ];
+
+    // Input
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (!gameStarted && e.key === "Enter") {
+        startGame();
+      }
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+
+    function startGame() {
+      menu.style.display = 'none';
+      gameStarted = true;
+      bgMusic.play();
+      gameLoop();
+    }
+
+    function drawHero() {
+      ctx.fillStyle = hero.color;
+      ctx.fillRect(hero.x, hero.y, hero.w, hero.h);
+    }
+
+    function drawEnemies() {
+      enemies.forEach(enemy => {
+        if (enemy.alive) {
+          ctx.fillStyle = enemy.color;
+          ctx.fillRect(enemy.x, enemy.y, enemy.w, enemy.h);
+        }
+      });
+    }
+
+    function updateHero() {
+      if (keys['ArrowRight']) hero.x += hero.speed;
+      if (keys['ArrowLeft']) hero.x -= hero.speed;
+      if (keys['z'] || keys['Z']) {
+        if (!hero.attacking) {
+          hero.attacking = true;
+          sfxAttack.play();
+          attack();
+          setTimeout(() => hero.attacking = false, 300);
+        }
+      }
+    }
+
+    function attack() {
+      enemies.forEach(enemy => {
+        if (
+          enemy.alive &&
+          hero.x + hero.w > enemy.x &&
+          hero.x < enemy.x + enemy.w &&
+          hero.y + hero.h > enemy.y &&
+          hero.y < enemy.y + enemy.h
+        ) {
+          enemy.health -= 30;
+          if (enemy.health <= 0) {
+            enemy.alive = false;
+          }
+        }
+      });
+    }
+
+    function drawHUD() {
+      ctx.fillStyle = "white";
+      ctx.fillText("Vidas: " + hero.lives, 20, 30);
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function gameLoop() {
+      if (!gameStarted) return;
+      clearCanvas();
+      updateHero();
+      drawHero();
+      drawEnemies();
+      drawHUD();
+      requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>
